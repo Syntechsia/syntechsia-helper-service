@@ -7,5 +7,8 @@ import lombok.Data;
 public class EmailRequest {
 
     private String emailTo;
+    private String studentName;
+    private String nik;
+    private String programName;
     private String templateName;
 }

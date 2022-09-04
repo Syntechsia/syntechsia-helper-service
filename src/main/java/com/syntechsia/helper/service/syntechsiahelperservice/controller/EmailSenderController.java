@@ -1,6 +1,7 @@
 package com.syntechsia.helper.service.syntechsiahelperservice.controller;
 
 import com.syntechsia.helper.service.syntechsiahelperservice.model.EmailRequest;
+import com.syntechsia.helper.service.syntechsiahelperservice.model.EmailResponse;
 import com.syntechsia.helper.service.syntechsiahelperservice.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +21,7 @@ public class EmailSenderController {
     }
 
     @PostMapping("/email")
-    public void sendEmailToStudent(@RequestBody EmailRequest emailRequest) {
-        emailService.sendEmail(emailRequest);
+    public EmailResponse sendEmailToStudent(@RequestBody EmailRequest emailRequest) {
+       return emailService.sendEmail(emailRequest);
     }
 }

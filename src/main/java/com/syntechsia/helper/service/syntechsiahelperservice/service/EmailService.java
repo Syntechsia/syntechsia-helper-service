@@ -1,8 +1,9 @@
 package com.syntechsia.helper.service.syntechsiahelperservice.service;
 
 import com.syntechsia.helper.service.syntechsiahelperservice.model.EmailRequest;
+import com.syntechsia.helper.service.syntechsiahelperservice.model.EmailResponse;
 
 public interface EmailService {
 
-    public void sendEmail(EmailRequest emailRequest);
+    public EmailResponse sendEmail(EmailRequest emailRequest);
 }
