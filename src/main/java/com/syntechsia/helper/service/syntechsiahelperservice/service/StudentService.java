@@ -8,5 +8,4 @@ public interface StudentService {
     List<StudentEntity> getAllStudentByStatusSendEmail(String statuSendEmail);
     boolean updateStudent(Long id);
 
-    void sendEmail(String statusSendEmail);
 }

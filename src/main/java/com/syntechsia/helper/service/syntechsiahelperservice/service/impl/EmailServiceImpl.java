@@ -1,10 +1,12 @@
 package com.syntechsia.helper.service.syntechsiahelperservice.service.impl;
 
+import com.syntechsia.helper.service.syntechsiahelperservice.entity.StudentEntity;
 import com.syntechsia.helper.service.syntechsiahelperservice.entity.TemplateEntity;
 import com.syntechsia.helper.service.syntechsiahelperservice.model.EmailRequest;
 import com.syntechsia.helper.service.syntechsiahelperservice.model.EmailResponse;
 import com.syntechsia.helper.service.syntechsiahelperservice.repository.TemplateRepository;
 import com.syntechsia.helper.service.syntechsiahelperservice.service.EmailService;
+import com.syntechsia.helper.service.syntechsiahelperservice.service.StudentService;
 import com.syntechsia.helper.service.syntechsiahelperservice.util.ConstantUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
 import javax.mail.internet.MimeMessage;
+import java.util.List;
 import java.util.Properties;
 
 
@@ -33,9 +36,12 @@ public class EmailServiceImpl implements EmailService {
 
     private final TemplateRepository templateRepository;
 
+    private final StudentService studentService;
+
     @Autowired
-    public EmailServiceImpl(TemplateRepository templateRepository) {
+    public EmailServiceImpl(TemplateRepository templateRepository, StudentService studentService) {
         this.templateRepository = templateRepository;
+        this.studentService = studentService;
     }
 
     @Override
@@ -83,6 +89,17 @@ public class EmailServiceImpl implements EmailService {
             response = new EmailResponse("Error : ".concat(e.getMessage()), ConstantUtil.FAILED_STATUS);
         }
         return response;
+    }
+
+    @Override
+    public void sendEmailByScheduler(String statusSendEmail) {
+        List<StudentEntity> students = studentService.getAllStudentByStatusSendEmail(statusSendEmail);
+        for (StudentEntity data: students) {
+            EmailRequest emailRequest = new EmailRequest(data.getEmail(),data.getName(),data.getNik(), data.getProgram(), "registerTemplate");
+            if (sendEmail(emailRequest).getStatus().equals(ConstantUtil.SUCCESS_STATUS)){
+                studentService.updateStudent(data.getId());
+            }
+        }
     }
 
 }

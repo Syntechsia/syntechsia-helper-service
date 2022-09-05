@@ -53,11 +53,5 @@ public class StudentServiceImpl implements StudentService {
         return response;
     }
 
-    @Override
-    public void sendEmail(String statusSendEmail) {
-        List<StudentEntity> students = getAllStudentByStatusSendEmail(statusSendEmail);
-        for (StudentEntity data: students) {
-            updateStudent(data.getId());
-        }
-    }
+
 }
