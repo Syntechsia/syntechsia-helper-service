@@ -1,7 +1,5 @@
 package com.syntechsia.helper.service.syntechsiahelperservice.controller;
 
-import com.syntechsia.helper.service.syntechsiahelperservice.model.EmailRequest;
-import com.syntechsia.helper.service.syntechsiahelperservice.model.EmailResponse;
 import com.syntechsia.helper.service.syntechsiahelperservice.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,5 +18,10 @@ public class ManualSchedulerController {
     @PostMapping("/send/email")
     public void sendEmailToStudent(@RequestParam String statusSendEmail) {
         emailService.sendEmailByScheduler(statusSendEmail);
+    }
+
+    @PostMapping("/send/email-webinar")
+    public void sendEmailToAudience(@RequestParam String invitedStatus) {
+        emailService.sendEmailWebinarByScheduler(invitedStatus);
     }
 }

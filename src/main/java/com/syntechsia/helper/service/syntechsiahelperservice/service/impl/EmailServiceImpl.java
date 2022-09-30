@@ -2,9 +2,11 @@ package com.syntechsia.helper.service.syntechsiahelperservice.service.impl;
 
 import com.syntechsia.helper.service.syntechsiahelperservice.entity.StudentEntity;
 import com.syntechsia.helper.service.syntechsiahelperservice.entity.TemplateEntity;
+import com.syntechsia.helper.service.syntechsiahelperservice.entity.WebinarProspekEntity;
 import com.syntechsia.helper.service.syntechsiahelperservice.model.EmailRequest;
 import com.syntechsia.helper.service.syntechsiahelperservice.model.EmailResponse;
 import com.syntechsia.helper.service.syntechsiahelperservice.repository.TemplateRepository;
+import com.syntechsia.helper.service.syntechsiahelperservice.repository.WebinarProspekRepository;
 import com.syntechsia.helper.service.syntechsiahelperservice.service.EmailService;
 import com.syntechsia.helper.service.syntechsiahelperservice.service.StudentService;
 import com.syntechsia.helper.service.syntechsiahelperservice.util.ConstantUtil;
@@ -35,12 +37,13 @@ public class EmailServiceImpl implements EmailService {
     public String mailPassword;
 
     private final TemplateRepository templateRepository;
-
+    private final WebinarProspekRepository webinarProspekRepository;
     private final StudentService studentService;
 
     @Autowired
-    public EmailServiceImpl(TemplateRepository templateRepository, StudentService studentService) {
+    public EmailServiceImpl(TemplateRepository templateRepository, WebinarProspekRepository webinarProspekRepository, StudentService studentService) {
         this.templateRepository = templateRepository;
+        this.webinarProspekRepository = webinarProspekRepository;
         this.studentService = studentService;
     }
 
@@ -92,6 +95,46 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public EmailResponse sendEmailWebinar(EmailRequest emailRequest) {
+        log.info("Start sending email with request {}", emailRequest);
+        boolean html = true;
+        EmailResponse response;
+        try {
+            TemplateEntity templateEntity = templateRepository.findByTemplateName(emailRequest.getTemplateName());
+            if (!ObjectUtils.isEmpty(templateEntity)) {
+                JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+                mailSender.setHost(mailHost);
+                mailSender.setPort(mailPort);
+                mailSender.setUsername(mailUsername);
+                mailSender.setPassword(mailPassword);
+
+                Properties properties = new Properties();
+                properties.setProperty("mail.smtp.auth", String.valueOf(Boolean.TRUE));
+                properties.setProperty("mail.smtp.starttls.enable", String.valueOf(Boolean.TRUE));
+
+                mailSender.setJavaMailProperties(properties);
+                MimeMessage message = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message);
+                helper.setFrom(mailUsername);
+                helper.setTo(emailRequest.getEmailTo());
+                helper.setSubject("Undangan untuk mengikuti webinar dari Syntechsia Academy!");
+                helper.setText(templateEntity.getTemplate()
+                        .replace("{NAME}", emailRequest.getStudentName().toUpperCase()), html);
+                mailSender.send(message);
+                response = new EmailResponse(ConstantUtil.SUCCESS, ConstantUtil.SUCCESS_STATUS);
+            } else {
+                log.info("template not found for template name {}", emailRequest.getTemplateName());
+                response = new EmailResponse(ConstantUtil.FAILED, ConstantUtil.FAILED_STATUS);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Error : ", e);
+            response = new EmailResponse("Error : ".concat(e.getMessage()), ConstantUtil.FAILED_STATUS);
+        }
+        return response;
+    }
+
+    @Override
     public void sendEmailByScheduler(String statusSendEmail) {
         List<StudentEntity> students = studentService.getAllStudentByStatusSendEmail(statusSendEmail);
         for (StudentEntity data: students) {
@@ -102,4 +145,18 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    @Override
+    public void sendEmailWebinarByScheduler(String invitedStatus) {
+        List<WebinarProspekEntity> webinarProspekEntities = webinarProspekRepository.findAllByInvitedStatus(invitedStatus);
+        for (WebinarProspekEntity data : webinarProspekEntities) {
+            EmailRequest emailRequest = new EmailRequest();
+            emailRequest.setEmailTo(data.getEmail());
+            emailRequest.setStudentName(data.getName());
+            emailRequest.setTemplateName("WEBINAR");
+            if (sendEmailWebinar(emailRequest).getStatus().equals(ConstantUtil.SUCCESS_STATUS)) {
+                data.setInvitedStatus(ConstantUtil.DONE_INVITE);
+                webinarProspekRepository.save(data);
+            }
+        }
+    }
 }
