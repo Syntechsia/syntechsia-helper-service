@@ -18,18 +18,11 @@ public class SendEmailScheduler {
         this.emailService = emailService;
     }
 
-    @Scheduled(cron = "${cron.send.email}")
+//    @Scheduled(cron = "${cron.send.email}")
     public void sendEmailExecuter(){
         log.info("send email scheduler start");
         emailService.sendEmailByScheduler(ConstantUtil.FAILED);
         log.info("send email scheduler end");
-    }
-
-    @Scheduled(cron = "${cron.send.email.webinar}")
-    public void sendEmailWebinarExecuter() {
-        log.info("send email webinar scheduler start");
-        emailService.sendEmailWebinarByScheduler(ConstantUtil.NEW_INVITE);
-        log.info("send email webinar scheduler end");
     }
 
 }

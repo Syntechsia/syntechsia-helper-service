@@ -70,16 +70,26 @@ public class EmailServiceImpl implements EmailService {
                 MimeMessageHelper helper = new MimeMessageHelper(message);
                 helper.setFrom(mailUsername);
                 helper.setTo(emailRequest.getEmailTo());
-                helper.setSubject("Selamat "
-                        .concat(emailRequest.getStudentName().toUpperCase())
-                        .concat("!")
-                        .concat( " siap berkarir sebagai "
-                        .concat(emailRequest.getProgramName())
-                        .concat(" dengan Syntechsia Academy?")));
-                helper.setText(templateEntity.getTemplate()
-                        .replace("{STUDENT_NAME}", emailRequest.getStudentName().toUpperCase())
-                        .replace("{PROGRAM_NAME}", emailRequest.getProgramName())
-                        .replace("{NIK}", emailRequest.getNik()), html);
+                switch (emailRequest.getTemplateName()) {
+                    case "registerTemplate" :
+                        helper.setSubject("Selamat "
+                                .concat(emailRequest.getStudentName().toUpperCase())
+                                .concat("!")
+                                .concat( " siap berkarir sebagai "
+                                        .concat(emailRequest.getProgramName())
+                                        .concat(" dengan Syntechsia Academy?")));
+                        helper.setText(templateEntity.getTemplate()
+                                .replace("{STUDENT_NAME}", emailRequest.getStudentName().toUpperCase())
+                                .replace("{PROGRAM_NAME}", emailRequest.getProgramName())
+                                .replace("{NIK}", emailRequest.getNik()), html);
+                    break;
+                    case "WEBINAR" :
+                        helper.setSubject("Undangan untuk mengikuti webinar dari Syntechsia Academy!");
+                        helper.setText(templateEntity.getTemplate().replace("{NAME}", emailRequest.getStudentName().toUpperCase()), html);
+                    break;
+                    default:
+                        log.info("Template not found");
+                }
                 mailSender.send(message);
                 response = new EmailResponse(ConstantUtil.SUCCESS, ConstantUtil.SUCCESS_STATUS);
             } else {
@@ -88,47 +98,7 @@ public class EmailServiceImpl implements EmailService {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            log.error("Error : ", e);
-            response = new EmailResponse("Error : ".concat(e.getMessage()), ConstantUtil.FAILED_STATUS);
-        }
-        return response;
-    }
-
-    @Override
-    public EmailResponse sendEmailWebinar(EmailRequest emailRequest) {
-        log.info("Start sending email with request {}", emailRequest);
-        boolean html = true;
-        EmailResponse response;
-        try {
-            TemplateEntity templateEntity = templateRepository.findByTemplateName(emailRequest.getTemplateName());
-            if (!ObjectUtils.isEmpty(templateEntity)) {
-                JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-                mailSender.setHost(mailHost);
-                mailSender.setPort(mailPort);
-                mailSender.setUsername(mailUsername);
-                mailSender.setPassword(mailPassword);
-
-                Properties properties = new Properties();
-                properties.setProperty("mail.smtp.auth", String.valueOf(Boolean.TRUE));
-                properties.setProperty("mail.smtp.starttls.enable", String.valueOf(Boolean.TRUE));
-
-                mailSender.setJavaMailProperties(properties);
-                MimeMessage message = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message);
-                helper.setFrom(mailUsername);
-                helper.setTo(emailRequest.getEmailTo());
-                helper.setSubject("Undangan untuk mengikuti webinar dari Syntechsia Academy!");
-                helper.setText(templateEntity.getTemplate()
-                        .replace("{NAME}", emailRequest.getStudentName().toUpperCase()), html);
-                mailSender.send(message);
-                response = new EmailResponse(ConstantUtil.SUCCESS, ConstantUtil.SUCCESS_STATUS);
-            } else {
-                log.info("template not found for template name {}", emailRequest.getTemplateName());
-                response = new EmailResponse(ConstantUtil.FAILED, ConstantUtil.FAILED_STATUS);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("Error : ", e);
+            log.error("Error sending email : ", e);
             response = new EmailResponse("Error : ".concat(e.getMessage()), ConstantUtil.FAILED_STATUS);
         }
         return response;
@@ -153,7 +123,7 @@ public class EmailServiceImpl implements EmailService {
             emailRequest.setEmailTo(data.getEmail());
             emailRequest.setStudentName(data.getName());
             emailRequest.setTemplateName("WEBINAR");
-            if (sendEmailWebinar(emailRequest).getStatus().equals(ConstantUtil.SUCCESS_STATUS)) {
+            if (sendEmail(emailRequest).getStatus().equals(ConstantUtil.SUCCESS_STATUS)) {
                 data.setInvitedStatus(ConstantUtil.DONE_INVITE);
                 webinarProspekRepository.save(data);
             }
